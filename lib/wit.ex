@@ -36,20 +36,20 @@ defmodule Wit do
   to return back the response to the /converse API and update the context until the /converse
   API returns back stop or `max_steps` have reached (whichever comes first).
   """
-  @spec run_actions(String.t, String.t, atom, String.t, map, integer) :: any
-  def run_actions(access_token, session_id, module, text \\ "", context \\ %{}, max_steps \\ 5)
-  def run_actions(_access_token, _session_id, _module, _text, context, max_steps) when max_steps <= 0 do
+  @spec run_actions(String.t, String.t, atom, String.t, map, integer, map) :: any
+  def run_actions(access_token, session_id, module, text \\ "", context \\ %{}, max_steps \\ 5, options \\ %{})
+  def run_actions(_access_token, _session_id, _module, _text, context, max_steps, options) when max_steps <= 0 do
     {:error, :invalid_max_steps, context}
   end
-  def run_actions(access_token, session_id, module, text, context, max_steps) do
+  def run_actions(access_token, session_id, module, text, context, max_steps, options) do
 
     Logger.debug "Running actions: Step remaining #{max_steps}"
     resp = converse(access_token, session_id, text, context)
 
     Logger.debug inspect(resp)
     case resp do
-      {:ok, conv} -> run_action(access_token, session_id, module, context, conv, max_steps-1)
-      {:error, error, resp} -> run_action(:error, session_id, module, context, {error, resp})
+      {:ok, conv} -> run_action(access_token, session_id, module, context, conv, max_steps-1, options)
+      {:error, error, resp} -> run_action(:error, session_id, module, context, {error, resp}, options)
       other -> other
     end
   end
@@ -77,37 +77,37 @@ defmodule Wit do
     interactive(access_token, session_id, module, context)
   end
 
-  defp run_action(_access_token, _session_id, _module, context, _resp, 0) do
+  defp run_action(_access_token, _session_id, _module, context, _resp, 0, options) do
     Logger.error  "Force stoped after reaching max steps"
     {:error, :max_steps_reached, context}
   end
 
-  defp run_action(access_token, session_id, module, context, %Converse{type: "msg"} = resp, max_steps) do
+  defp run_action(access_token, session_id, module, context, %Converse{type: "msg"} = resp, max_steps, options) do
     Logger.debug "Got converse type \"msg\""
 
-    context = apply(module, :call_action, ["say", session_id, context, resp])
-    run_actions(access_token, session_id, module, "", context, max_steps)
+    context = apply(module, :call_action, ["say", session_id, context, resp, options])
+    run_actions(access_token, session_id, module, "", context, max_steps, options)
   end
 
-  defp run_action(access_token, session_id, module, context, %Converse{type: "merge"} = resp, max_steps) do
+  defp run_action(access_token, session_id, module, context, %Converse{type: "merge"} = resp, max_steps, options) do
     Logger.debug "Got converse type \"merge\""
-    context = apply(module, :call_action, ["merge", session_id, context, resp])
-    run_actions(access_token, session_id, module, "", context, max_steps)
+    context = apply(module, :call_action, ["merge", session_id, context, resp, options])
+    run_actions(access_token, session_id, module, "", context, max_steps, options)
   end
 
-  defp run_action(access_token, session_id, module, context, %Converse{type: "action"} = resp, max_steps) do
+  defp run_action(access_token, session_id, module, context, %Converse{type: "action"} = resp, max_steps, options) do
     Logger.debug "Got converse type \"action\""
-    context = apply(module, :call_action, [resp.action, session_id, context])
-    run_actions(access_token, session_id, module, "", context, max_steps)
+    context = apply(module, :call_action, [resp.action, session_id, context, options])
+    run_actions(access_token, session_id, module, "", context, max_steps, options)
   end
 
-  defp run_action(_access_token, _session_id, _module, context, %Converse{type: "stop"}, _max_steps) do
+  defp run_action(_access_token, _session_id, _module, context, %Converse{type: "stop"}, _max_steps, options) do
     Logger.debug "Got converse type \"stop\""
     {:ok, context}
   end
 
-  defp run_action(:error, session_id, module, context, error) do
+  defp run_action(:error, session_id, module, context, error, options) do
     Logger.debug "Calling the error handler"
-    apply(module, :call_action, ["error", session_id, context, error])
+    apply(module, :call_action, ["error", session_id, context, error, options])
   end
 end

@@ -55,7 +55,7 @@ defmodule Wit.Actions do
     {func_name, arg_list} = Macro.decompose_call(head)
 
     # Throw error if the argument list is not equal to 3
-    if length(arg_list) != 2 do
+    if length(arg_list) != 3 do
       raise ArgumentError, message: "Wit action should have three arguments i.e. session, context"
     end
 
@@ -74,12 +74,12 @@ defmodule Wit.Actions do
       def actions() do
         @wit_actions
       end
-      def call_action(action, session, context, message) when action in ["say", "merge"] do
-        call_action(action, [session, context, message])
+      def call_action(action, session, context, message, options) when action in ["say", "merge"] do
+        call_action(action, [session, context, message, options])
       end
 
-      def call_action(action, session, context) do
-        call_action(action, [session, context])
+      def call_action(action, session, context, options) do
+        call_action(action, [session, context, options])
       end
 
       defp call_action(action, arg_list) do
