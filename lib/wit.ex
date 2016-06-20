@@ -38,7 +38,7 @@ defmodule Wit do
   """
   @spec run_actions(String.t, String.t, atom, String.t, map, integer, map) :: any
   def run_actions(access_token, session_id, module, text \\ "", context \\ %{}, max_steps \\ 5, options \\ %{})
-  def run_actions(_access_token, _session_id, _module, _text, context, max_steps, options) when max_steps <= 0 do
+  def run_actions(_access_token, _session_id, _module, _text, context, max_steps, _options) when max_steps <= 0 do
     {:error, :invalid_max_steps, context}
   end
   def run_actions(access_token, session_id, module, text, context, max_steps, options) do
@@ -77,7 +77,7 @@ defmodule Wit do
     interactive(access_token, session_id, module, context)
   end
 
-  defp run_action(_access_token, _session_id, _module, context, _resp, 0, options) do
+  defp run_action(_access_token, _session_id, _module, context, _resp, 0, _options) do
     Logger.error  "Force stoped after reaching max steps"
     {:error, :max_steps_reached, context}
   end
@@ -101,7 +101,7 @@ defmodule Wit do
     run_actions(access_token, session_id, module, "", context, max_steps, options)
   end
 
-  defp run_action(_access_token, _session_id, _module, context, %Converse{type: "stop"}, _max_steps, options) do
+  defp run_action(_access_token, _session_id, _module, context, %Converse{type: "stop"}, _max_steps, _options) do
     Logger.debug "Got converse type \"stop\""
     {:ok, context}
   end
