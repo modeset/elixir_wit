@@ -35,7 +35,7 @@ defmodule Wit.Actions do
 
       @behaviour Wit.DefaultActions
 
-      @wit_actions %{"say" => :say, "merge" => :merge, "error" => :error}
+      @wit_actions %{"say" => :say, "merge" => :merge, "error" => :error, "take_action" => :take_action}
 
       @before_compile Wit.Actions
     end
@@ -56,7 +56,7 @@ defmodule Wit.Actions do
 
     # Throw error if the argument list is not equal to 3
     if length(arg_list) != 3 do
-      raise ArgumentError, message: "Wit action should have three arguments i.e. session, context"
+      raise ArgumentError, message: "Wit action should have three arguments i.e. session, context and options"
     end
 
     quote do
@@ -78,8 +78,18 @@ defmodule Wit.Actions do
         call_action(action, [session, context, message, options])
       end
 
+      def call_action(action, session, context, error, options) when action in ["error"] do
+        call_action(action, [session, context, error, options])
+      end
+
       def call_action(action, session, context, options) do
-        call_action(action, [session, context, options])
+        wit_actions = @wit_actions
+        func = Map.get(wit_actions, action)
+        if func do
+          call_action(action, [session, context, options])
+        else
+          call_action("take_action", [session, context, action, options])
+        end
       end
 
       defp call_action(action, arg_list) do
