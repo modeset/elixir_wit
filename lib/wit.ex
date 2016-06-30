@@ -27,10 +27,11 @@ defmodule Wit do
   @spec converse(String.t, String.t, String.t, map) :: {:ok, Converse.t} | {:error, String.t, map}
   def converse(access_token, session_id, text \\ "", context \\ %{}) do
 
-    case Client.converse(access_token, session_id, text, context) = result do
-      {:error, _} -> "{}"
-      _ -> result
-    end |> Deserializer.deserialize_converse
+    ret = Client.converse(access_token, session_id, text, context)
+    case ret do
+      {:error, _} -> Deserializer.deserialize_converse("{}")
+      _ -> Deserializer.deserialize_converse(ret)
+    end
   end
 
   @doc """
