@@ -29,6 +29,7 @@ defmodule Wit do
 
     ret = Client.converse(access_token, session_id, text, context)
     case ret do
+      {:stopped, _} -> Deserializer.deserialize_converse("{}")
       {:error, _} -> Deserializer.deserialize_converse("{}")
       _ -> Deserializer.deserialize_converse(ret)
     end
