@@ -12,7 +12,7 @@ defmodule Wit.Client do
     body_stringified = Poison.encode!(context)
     Logger.debug "Calling API #{converse_api} \n #{body_stringified}"
 
-    HTTPotion.post(converse_api, [body: body_stringified, headers: headers(access_token)])
+    HTTPotion.post(converse_api, [body: body_stringified, headers: headers(access_token), timeout: Application.get_env(:elixir_wit, :timeout) || 5000])
   end
 
   @api_message "#{@endpoint}/message"
@@ -28,7 +28,7 @@ defmodule Wit.Client do
     }
 
     message_api = create_url("#{@api_message}?", get_params)
-    HTTPotion.get(message_api, [headers: headers(access_token)])
+    HTTPotion.get(message_api, [headers: headers(access_token), timeout: Application.get_env(:elixir_wit, :timeout) || 5000])
   end
 
   defp create_url(endpoint, %{} = get_params) do
