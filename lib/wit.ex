@@ -50,11 +50,17 @@ defmodule Wit do
     Logger.debug "Running actions: Step remaining #{max_steps}"
     resp = converse(access_token, session_id, text, context)
 
-    Logger.debug inspect(resp)
-    case resp do
-      {:ok, conv} -> run_action(access_token, session_id, module, context, conv, max_steps-1, options)
-      {:error, error, resp} -> run_action(:error, session_id, module, context, {error, resp}, options)
-      other -> other
+    case context do
+      %{stopped: true} ->
+        Logger.debug("Stopping further converse requests")
+        resp
+      _ ->
+        Logger.debug inspect(resp)
+        case resp do
+          {:ok, conv} -> run_action(access_token, session_id, module, context, conv, max_steps-1, options)
+          {:error, error, resp} -> run_action(:error, session_id, module, context, {error, resp}, options)
+          other -> other
+        end
     end
   end
 
