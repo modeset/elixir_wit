@@ -57,11 +57,28 @@ defmodule Wit do
       _ ->
         Logger.debug inspect(resp)
         case resp do
-          {:ok, conv} -> run_action(access_token, session_id, module, context, conv, max_steps-1, options)
+          {:ok, conv} ->
+            if max_steps == Application.get_env(:elixir_wit, :max_steps) && !certainty_met(conv, max_steps) do
+              run_action(:unsure, session_id, module, context, conv, options)
+            else
+              run_action(access_token, session_id, module, context, conv, max_steps-1, options)
+            end
           {:error, error, resp} -> run_action(:error, session_id, module, context, {error, resp}, options)
           other -> other
         end
     end
+  end
+
+  def certainty_met(conv, max_steps) do
+    confidence = conv.confidence
+    confidence = confidence + Enum.reduce(conv.entities, 0, fn(x, acc) ->
+      {_, [act | _]} = x;
+      act["confidence"] + acc
+    end)
+    confidence = confidence * (1 + (1 - (max_steps / Application.get_env(:elixir_wit, :max_steps))))
+
+    Logger.debug "Calculated confidence: #{confidence}"
+    confidence >= Application.get_env(:elixir_wit, :confidence_threshold)
   end
 
   @doc """
@@ -119,5 +136,10 @@ defmodule Wit do
   defp run_action(:error, session_id, module, context, error, options) do
     Logger.debug "Calling the error handler"
     apply(module, :call_action, ["error", session_id, context, error, options])
+  end
+
+  defp run_action(:unsure, session_id, module, context, conv, options) do
+    Logger.debug "Calling the uncertainty threashold handler"
+    apply(module, :call_action, ["unsure", session_id, context, conv, options])
   end
 end

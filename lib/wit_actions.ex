@@ -35,7 +35,7 @@ defmodule Wit.Actions do
 
       @behaviour Wit.DefaultActions
 
-      @wit_actions %{"say" => :say, "merge" => :merge, "error" => :error, "take_action" => :take_action}
+      @wit_actions %{"say" => :say, "merge" => :merge, "error" => :error, "unsure" => :unsure, "take_action" => :take_action}
 
       @before_compile Wit.Actions
     end
@@ -80,6 +80,10 @@ defmodule Wit.Actions do
 
       def call_action(action, session, context, error, options) when action in ["error"] do
         call_action(action, [session, context, error, options])
+      end
+
+      def call_action(action, session, context, conv, options) when action in ["unsure"] do
+        call_action(action, [session, context, conv, options])
       end
 
       def call_action(action, session, context, options) do
